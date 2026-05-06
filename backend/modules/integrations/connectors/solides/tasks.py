@@ -132,7 +132,7 @@ def _fetch_tangerino_lookup_maps(api_token: str) -> tuple[dict, dict]:
         if resp.status_code == 200:
             data = resp.json()
             items = data.get("content", data) if isinstance(data, dict) else data
-            for jr in (items if isinstance(items, list) else []):
+            for jr in items if isinstance(items, list) else []:
                 if jr.get("id"):
                     job_roles_map[jr["id"]] = jr.get("description", "")
     except Exception as exc:
@@ -143,7 +143,7 @@ def _fetch_tangerino_lookup_maps(api_token: str) -> tuple[dict, dict]:
         if resp.status_code == 200:
             data = resp.json()
             items = data.get("content", data) if isinstance(data, dict) else data
-            for ws in (items if isinstance(items, list) else []):
+            for ws in items if isinstance(items, list) else []:
                 if ws.get("id"):
                     schedules_map[ws["id"]] = ws.get("name", "")
     except Exception as exc:
