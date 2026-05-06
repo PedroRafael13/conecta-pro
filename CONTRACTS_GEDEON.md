@@ -5136,3 +5136,40 @@ cashflow_entries (20 rows), bank_transactions (176+ rows), inter_transactions (1
 **Enum real:** ATIVO/INATIVO/SUSPENSO/BLOQUEADO/TRIAL/CANCELADO — INATIVO = "inactive" existe em produção.
 **Causa do falso positivo:** grep com head -20 truncou antes de exibir a definição da classe.
 **Testes:** 71/71 PASS — nenhuma alteração necessária.
+
+## §109 — Auto-categorização 1019 transações Inter (sem categoria)
+**Data:** 2026-05-06
+**Responsável:** Jordan Jesus (jjesus@conectamais.pro)
+
+**Antes:**
+- sem_categoria: 1020
+- com_categoria: 7
+- total: 1027
+
+**Depois:**
+- sem_categoria: 1 (crédito — tipo_operacao=C, fora do escopo de débitos)
+- com_categoria: 1026
+- total: 1027
+
+**Breakdown por categoria:**
+| Categoria        | Total | % | Valor R$ |
+|------------------|-------|---|----------|
+| vt_va_combinado  | 430   | 41.9% | 13.793,72 |
+| outros           | 325   | 31.7% | 82.319,94 |
+| salario          | 204   | 19.9% | 845.573,20 |
+| vale_transporte  | 52    | 5.1% | 523,61 |
+| vale_alimentacao | 15    | 1.5% | 344,96 |
+
+**Vinculadas ao kit (incluir_no_kit=true):**
+| Categoria        | Qtd |
+|------------------|-----|
+| vt_va_combinado  | 430 |
+| salario          | 204 |
+| vale_transporte  | 52  |
+| vale_alimentacao | 15  |
+| **TOTAL KIT**    | **701** |
+
+**Método:** Cenário C — script Python bulk direto (InterCategorizacaoService)
+- 1007 com nome: auto_categorizar_colaborador() por (nome, mes_ref)
+- 105 sem nome: heurística por valor
+- Meses processados: 03.2026, 04.2026, 05.2026
