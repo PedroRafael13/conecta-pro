@@ -5635,3 +5635,42 @@ Geradas folhas de ponto de **março/2026** para todos os 43 funcionários com ba
 ### Pendência Jordan
 Para gerar folhas de abril: importar batidas do REP/leitor biométrico para `gp_clock_punches`.
 Sem dados de ponto, nenhum PDF pode ser gerado (INV-2).
+
+## §121 — Sync enriquecido Sólides campos eSocial
+**Data:** 2026-05-06
+**Arquivo:** `backend/modules/integrations/connectors/solides/tasks.py`
+**Commit:** d839d50e
+
+### Diagnóstico da API Tangerino
+A API `/employee/find-all` retorna apenas: id, name, email, birthDate, cpf, pis,
+admissionDate, gender (MASCULINO/FEMININO), externalId (matrícula), jobRoleDTO.id,
+currentWorkSchedule.id, fired.
+
+Campos eSocial **NÃO disponíveis** na API (requerem entrada manual):
+estado_civil, nome_mae, nome_pai, rg, ctps_*, titulo_eleitor, naturalidade, nacionalidade.
+
+### Bugs corrigidos
+1. `externalId` → `matricula`: campo nunca mapeado (API retorna "000085" → armazenar "85")
+2. `jobRoleDTO.id` → `cargo`: código buscava `jobRole` (inexistente) — agora resolve via pre-fetch
+3. `currentWorkSchedule.id` → `escala_padrao`: código buscava `workSchedule` (inexistente) — agora resolve via pre-fetch
+
+### Campos mapeados pelo sync
+- data_nascimento ✅ | sexo ✅ | pis ✅ | data_admissao ✅
+- solides_id ✅ | nome ✅ | matricula ✅ (novo) | cargo ✅ (corrigido)
+- escala_padrao ✅ (corrigido) | data_demissao/status ✅
+
+### Completude antes → depois
+| Campo | Antes | Depois |
+|-------|-------|--------|
+| escala_padrao | 39/45 (87%) | 45/45 (100%) |
+| matricula | 45/45 | 45/45 |
+| cargo | 45/45 | 45/45 |
+| sexo | 38/45 (84%) | 38/45 (imutável via API) |
+| pis | 40/45 (89%) | 40/45 |
+| estado_civil | 39/45 (87%) | 39/45 (não na API) |
+| nome_mae | 11/45 (24%) | 11/45 (não na API) |
+| rg | 1/45 (2%) | 1/45 (não na API) |
+| ctps | 0/45 (0%) | 0/45 (não na API) |
+
+**Completude média campos disponíveis via API: 43% → ~53%** (escala resolvida)
+**Campos eSocial críticos ausentes (rg, ctps, nome_mae): requerem importação manual ou fonte alternativa**
