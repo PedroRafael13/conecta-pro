@@ -5636,6 +5636,56 @@ Geradas folhas de ponto de **março/2026** para todos os 43 funcionários com ba
 Para gerar folhas de abril: importar batidas do REP/leitor biométrico para `gp_clock_punches`.
 Sem dados de ponto, nenhum PDF pode ser gerado (INV-2).
 
+### STEP 7 — Validações endpoint (executadas em auditoria 2026-05-06)
+
+| Step | Teste | Resultado | Status |
+|------|-------|-----------|--------|
+| 7.1 | POST geração março (employee com batidas) | `{total_dias: N, total_batidas: N}` | ✅ |
+| 7.2 | POST geração abril (zero batidas) | `{total_dias:0, total_batidas:0}` | ✅ |
+| 7.3 | POST com mes_ref inválido | `400 Bad Request` | ✅ |
+| 7.4 | GET `/folha-pdf/{emp_id}/download?mes_ref=03.2026` | `HTTP 200`, HTML válido retornado | ✅ |
+| 7.5 | Conteúdo HTML — head -20 do arquivo | `<!DOCTYPE html>` + título `ADEMIR SALUSTIANO — Março/2026` | ✅ |
+| 7.6 | POST sem Authorization header | `HTTP 401` | ✅ |
+| 7.7 | POST mes_ref=01.2020 (sem batidas históricas) | `HTTP 200`, `total_dias:0`, `total_batidas:0` | ✅ |
+
+### STEP 8 — Integração GED (executada em auditoria 2026-05-06)
+
+**8.1 — auto-assemble março/2026:**
+```json
+{"reference_month":"2026-05-01","total_clients":11,"kits_created":8,
+ "kits_updated":0,"total_documents":382,"onvio_matched":0,"errors":[]}
+```
+
+**8.2 — kit_documents `folha_ponto` (source=dp) e `folhas_ponto` (source=gedeon):**
+| document_type | source | com_arquivo | sem_arquivo |
+|---------------|--------|-------------|-------------|
+| folha_ponto | dp | 94 | 71 |
+| folhas_ponto | gedeon | 0 | 47 |
+
+Os 47 slots `folhas_ponto/gedeon` (sem arquivo) correspondem às folhas HTML geradas —
+o `file_path` no ged_kit_documents não foi atualizado automaticamente pelo endpoint
+(o endpoint salva o HTML no filesystem mas não atualiza o registro GED).
+**Pendência:** atualizar `file_path` nos 47 slots gedeon após geração.
+
+**8.3 — `/gedeon/kits/lote?mes_ref=03.2026` completude:**
+Endpoint retorna 11 clientes; campos `docs_faltantes` refletem ausência de nfse/boleto
+(aguardam fase 2 banco). Sem impacto nas folhas de ponto (escopo diferente).
+
+### STEP 10 — Relatório final §121
+
+| Item | Valor |
+|------|-------|
+| Funcionários com batidas março/2026 | 43 |
+| HTMLs gerados com sucesso | 43 (46 no filesystem, inclui testes) |
+| Funcionários sem batidas em abril/2026 | 43 (zero batidas no banco) |
+| Endpoint geração | `POST /api/v1/people-management/ponto/folha-pdf/{id}?mes_ref=MM.YYYY` |
+| Endpoint download | `GET /api/v1/people-management/ponto/folha-pdf/{id}/download?mes_ref=MM.YYYY` |
+| Auth 401 sem token | ✅ confirmado |
+| Resposta sem batidas | `total_dias:0, total_batidas:0` (não 404) |
+| Kit GED integrado | folha_ponto/dp: 94 com arquivo |
+| Slots gedeon sem file_path | 47 (pendência de update) |
+| Commit §121 | HEAD (session paralela) |
+
 ## §122 — Sync enriquecido Sólides campos eSocial
 **Data:** 2026-05-06
 **Arquivo:** `backend/modules/integrations/connectors/solides/tasks.py`
